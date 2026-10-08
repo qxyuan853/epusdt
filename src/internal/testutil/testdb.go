@@ -38,6 +38,7 @@ func SetupTestDatabases(t testing.TB) func() {
 	runtimeDB := mustOpenSQLite(t, filepath.Join(t.TempDir(), "runtime.db"))
 
 	mustMigrate(t, mainDB,
+		&mdb.ProcessedChainTransaction{},
 		&mdb.Orders{},
 		&mdb.ProviderOrder{},
 		&mdb.WalletAddress{},

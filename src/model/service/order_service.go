@@ -21,6 +21,7 @@ import (
 	"github.com/GMWalletApp/epusdt/util/security"
 	"github.com/dromara/carbon/v2"
 	"github.com/shopspring/decimal"
+	"gorm.io/gorm/clause"
 )
 
 const (
@@ -268,6 +269,25 @@ func orderProcessing(req *request.OrderProcessingRequest, opts orderProcessingOp
 		tx.Rollback()
 		return constant.OrderBlockAlreadyProcess
 	}
+	if network, transactionID := chainTransactionClaimKey(req.Network, req.BlockTransactionId); network != "" && transactionID != "" {
+		claim := &mdb.ProcessedChainTransaction{
+			Network:       network,
+			TransactionID: transactionID,
+			TradeID:       req.TradeId,
+		}
+		result := tx.Clauses(clause.OnConflict{
+			Columns:   []clause.Column{{Name: "network"}, {Name: "transaction_id"}},
+			DoNothing: true,
+		}).Create(claim)
+		if result.Error != nil {
+			tx.Rollback()
+			return result.Error
+		}
+		if result.RowsAffected == 0 {
+			tx.Rollback()
+			return constant.OrderBlockAlreadyProcess
+		}
+	}
 
 	updated, err := data.OrderSuccessWithStatusesWithTransaction(tx, req, opts.allowedStatuses)
 	if err != nil {
@@ -390,6 +410,15 @@ func orderProcessing(req *request.OrderProcessingRequest, opts orderProcessingOp
 	}
 
 	return nil
+}
+
+func chainTransactionClaimKey(network, transactionID string) (string, string) {
+	network = strings.ToLower(strings.TrimSpace(network))
+	transactionID = strings.TrimSpace(transactionID)
+	if manualBlockTransactionIDIsHex(network) {
+		transactionID = strings.ToLower(transactionID)
+	}
+	return network, transactionID
 }
 
 // ReserveAvailableWalletAndAmount finds and locks a network+address+token+amount pair.

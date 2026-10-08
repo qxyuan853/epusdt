@@ -70,6 +70,7 @@ func setupTestEnv(t *testing.T) *echo.Echo {
 
 	// ensure tables exist (MdbTableInit uses sync.Once, so migrate directly)
 	dao.Mdb.AutoMigrate(
+		&mdb.ProcessedChainTransaction{},
 		&mdb.Orders{},
 		&mdb.WalletAddress{},
 		&mdb.AdminUser{},

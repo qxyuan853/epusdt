@@ -33,6 +33,7 @@ func MdbTableInit() {
 			name  string
 			model interface{}
 		}{
+			{"ProcessedChainTransaction", &mdb.ProcessedChainTransaction{}},
 			{"Orders", &mdb.Orders{}},
 			{"WalletAddress", &mdb.WalletAddress{}},
 			{"AdminUser", &mdb.AdminUser{}},
